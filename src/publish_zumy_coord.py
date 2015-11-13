@@ -11,20 +11,28 @@ import exp_quat_func as eqf
 
 listener = None
 
-# def return_rbt(trans, rot):
-#     """
-#     Prints out the 4x4 rigid body transformation matrix from quaternions
+def get_x_angle(trans,rot):
+    g=return_rbt(trans,rot)
+    x_direction = g[0:3,0]
+    #print x_direction
+    x_angle = np.atan2(x_direction[1],x_direction[0])
+    return x_angle
 
-#     Input:
-#         (3,) array - translation ector
-#         (4,) array - rotation vector in quaternions
-#     """
 
-#     #YOUR CODE HERE
-#     (omega,theta) = eqf.quaternion_to_exp(rot)
-#     g = eqf.create_rbt(omega,theta,trans)
+def return_rbt(trans, rot):
+    """
+    Prints out the 4x4 rigid body transformation matrix from quaternions
 
-#     return g
+    Input:
+        (3,) array - translation ector
+        (4,) array - rotation vector in quaternions
+    """
+
+    #YOUR CODE HERE
+    (omega,theta) = eqf.quaternion_to_exp(rot)
+    g = eqf.create_rbt(omega,theta,trans)
+
+    return g
 
 # def compute_twist(rbt):
 #     """
@@ -96,8 +104,9 @@ if __name__=='__main__':
                 if curr_ar_tag in trans:
                     curr_trans = np.array(trans[curr_ar_tag])
                     curr_coord = np.dot(curr_trans, base_coord_matrix_inv)
-                    curr_theta = 2.0 * np.arccos(rot[curr_ar_tag][3])\
-                        * np.sign(rot[curr_ar_tag][2])
+                    curr_theta = get_x_angle(trans[curr_ar_tag],rot[curr_ar_tag])
+                    # curr_theta = 2.0 * np.arccos(rot[curr_ar_tag][3])\
+                    #     * np.sign(rot[curr_ar_tag][2])
                     curr_msg = ZumyCoord()
                     curr_msg.zumyID = curr_ar_tag
                     curr_msg.time.data = latest_t[curr_ar_tag]
