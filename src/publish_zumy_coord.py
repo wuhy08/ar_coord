@@ -53,9 +53,9 @@ def return_rbt(trans, rot):
 
 if __name__=='__main__':
     #Set up new node called 'publish_zumy_coord':
-    rospy.init_node('publish_zumy_coord')
+    rospy.init_node('publish_AR_coord')
     #Set up a publisher called 'zumy_position'
-    zumy_coord_pub = rospy.Publisher('zumy_position', ZumyCoord, queue_size=10)
+
     
     #The input should have at least 4 additional tag number. First three is coord base
     #Starting from the 4-th one, is the tag's coord.
@@ -114,6 +114,7 @@ if __name__=='__main__':
                     curr_msg.position.x = curr_coord[0]
                     curr_msg.position.y = curr_coord[1]
                     curr_msg.position.theta = curr_theta
+                    zumy_coord_pub = rospy.Publisher("/"+ curr_ar_tag +"/AR_position", ZumyCoord, queue_size=10)
                     zumy_coord_pub.publish(curr_msg)
                     print curr_ar_tag
                     print curr_coord
