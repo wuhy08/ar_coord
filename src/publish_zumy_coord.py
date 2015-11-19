@@ -7,7 +7,8 @@ import numpy as np
 from tf2_msgs.msg import TFMessage
 from geometry_msgs.msg import Transform, Vector3
 from ar_coord.msg import ZumyCoord
-import exp_quat_func as eqf
+import robot206
+#import exp_quat_func as eqf
 
 listener = None
 
@@ -15,7 +16,7 @@ def get_x_angle(trans,rot):
     g=return_rbt(trans,rot)
     x_direction = g[0:3,0]
     #print x_direction
-    x_angle = np.atan2(x_direction[1],x_direction[0])
+    x_angle = math.atan2(x_direction[1],x_direction[0])
     return x_angle
 
 
@@ -27,10 +28,8 @@ def return_rbt(trans, rot):
         (3,) array - translation ector
         (4,) array - rotation vector in quaternions
     """
-
-    #YOUR CODE HERE
-    (omega,theta) = eqf.quaternion_to_exp(rot)
-    g = eqf.create_rbt(omega,theta,trans)
+    (omega,theta) = robot206.quaternion_to_exp(rot)
+    g = robot206.create_rbt(omega,theta,trans)
 
     return g
 
@@ -53,11 +52,15 @@ def return_rbt(trans, rot):
 #     return (v,omega)
 
 if __name__=='__main__':
+    #Set up new node called 'publish_zumy_coord':
     rospy.init_node('publish_zumy_coord')
+    #Set up a publisher called 'zumy_position'
     zumy_coord_pub = rospy.Publisher('zumy_position', ZumyCoord, queue_size=10)
-
+    
+    #The input should have at least 4 additional tag number. First three is coord base
+    #Starting from the 4-th one, is the tag's coord.
     if len(sys.argv) < 4:
-        print('Use: set_coord.py [ AR tag number ] [ AR tag number ] [ AR tag number ] ')
+        print('Use: publish_zumy_coord.py [ AR tag number ] [ AR tag number ] [ AR tag number ] [ AR tag number ]...')
         sys.exit()
     ar_suffix = 'ar_marker_'
     ar_tag_names = [ar_suffix+sys.argv for sys.argv in sys.argv[1:]]
@@ -68,15 +71,8 @@ if __name__=='__main__':
     rot = {}
     latest_t = {}
 
-    #     ar_tags = {}
-    # ar_tags['ar0'] = 'ar_marker_' + sys.argv[1]
-    # ar_tags['arx'] = 'ar_marker_' + sys.argv[2]
-    # ar_tags['ary'] = 'ar_marker_' + sys.argv[3]
-
     listener = tf.TransformListener()
-    #coord_pub = rospy.Publisher('base_coord', BaseCoord, queue_size=10)
-
-
+    #Set the publish rate to be 10Hz
     rate = rospy.Rate(10.0)
     while not rospy.is_shutdown():
         for curr_ar_tag in ar_tag_names[1:]:
@@ -104,9 +100,14 @@ if __name__=='__main__':
                 if curr_ar_tag in trans:
                     curr_trans = np.array(trans[curr_ar_tag])
                     curr_coord = np.dot(curr_trans, base_coord_matrix_inv)
-                    curr_theta = get_x_angle(trans[curr_ar_tag],rot[curr_ar_tag])
+
+                    numpy_trans = np.asarray(trans[curr_ar_tag])
+                    numpy_rot = np.asarray(rot[curr_ar_tag])
+                    curr_theta = get_x_angle(numpy_trans,numpy_rot)
+                    curr_theta = curr_theta*180/np.pi;
                     # curr_theta = 2.0 * np.arccos(rot[curr_ar_tag][3])\
                     #     * np.sign(rot[curr_ar_tag][2])
+
                     curr_msg = ZumyCoord()
                     curr_msg.zumyID = curr_ar_tag
                     curr_msg.time.data = latest_t[curr_ar_tag]
@@ -116,7 +117,7 @@ if __name__=='__main__':
                     zumy_coord_pub.publish(curr_msg)
                     print curr_ar_tag
                     print curr_coord
-                    print curr_theta*180/np.pi
+                    print curr_theta
                     print latest_t[curr_ar_tag]
         rate.sleep()
 
